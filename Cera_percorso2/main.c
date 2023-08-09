@@ -320,37 +320,17 @@ int binarySearchNodeArray(TreeNode** nodeArray, int size, int target) {
 }
 
 void reconstructPath(int predecessors[], int startNode, int endNode, TreeNode** nodeArray) {
-    int pathLength = 0;
-    int* path = (int*)malloc(numero_stazioni * sizeof(int)); // Allocazione iniziale
-
     int currentNode = endNode;
-    while (currentNode != startNode) {
-        path[pathLength] = currentNode;
-        pathLength++;
+    while (currentNode != startNode && currentNode >= 0 && currentNode < numero_stazioni) {
+        printf("%d ", nodeArray[currentNode]->km);
         currentNode = predecessors[currentNode];
     }
-
-    path[pathLength] = startNode;
-    pathLength++;
-
-    for (int i = pathLength - 1; i > 0; i--) {
-        printf("%d ", nodeArray[path[i]]->km);
-    }
-    printf("%d\n", nodeArray[path[0]]->km);
-
-    free(path);
+    printf("%d\n", nodeArray[startNode]->km);
 }
+
 
 void pianifica_percorso(TreeNode* root, int da, int a) {
     TreeNode** nodeArray = treeToNodeArray(root, &numero_stazioni);
-    for (int i = 0; i < numero_stazioni; i++) {
-        printf("Node %d: Key = %d\n", i, nodeArray[i]->km);
-        printf("Autonomie: ");
-        for (int j = 0; j < nodeArray[i]->max_heap->car_size; j++) {
-            printf("%d ", nodeArray[i]->max_heap->cars[j]);
-        }
-        printf("\n\n");
-    }
     int costo[numero_stazioni];
     int precedente[numero_stazioni];
     // Inizializza array dei costi a numero molto grande e quello dei precedenti a NULL
@@ -361,7 +341,7 @@ void pianifica_percorso(TreeNode* root, int da, int a) {
 
     int startNode = binarySearchNodeArray(nodeArray, numero_stazioni, da); //indice in nodearray del nodo di partenza
     int endNode = binarySearchNodeArray(nodeArray, numero_stazioni, a); //indice in nodeArray del nodo di arrivo
-
+    printf("SONO QUI\n");
     int m;
     costo[startNode] = 0;
     // Gestisci il caso in cui startNode->key < endNode->key
