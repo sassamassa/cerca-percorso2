@@ -1,0 +1,3 @@
+C:/Users/39334/CLionProjects/Cera_percorso2/cmake-build-debug/CMakeFiles/Cera_percorso2.dir
+C:/Users/39334/CLionProjects/Cera_percorso2/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/39334/CLionProjects/Cera_percorso2/cmake-build-debug/CMakeFiles/rebuild_cache.dir
