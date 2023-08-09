@@ -196,38 +196,35 @@ void demolisci_stazione(int km) {
     }
 }
 
+// Funzione per aggiungere un'auto all'albero
+void aggiungi_auto(TreeNode* root, int km, int autonomia_auto) {
+    TreeNode* stationNode = searchStation(root, km);
 
-/*
-//Prima trovo la stazione giusta nella lista, poi la aggiungo nel corrispettivo max heap
-void aggiungi_auto(int km, int autonomia_auto){
-    int index = ricerca_stazione(km);
-    if(index != -1){
-        insertHeap(stazioni[index].max_heap, autonomia_auto);
+    if (stationNode != NULL) {
+        insertHeap(stationNode->max_heap, autonomia_auto);
         printf("aggiunta\n");
     } else {
         printf("non aggiunta\n");
     }
 }
 
-//Funzione che viene chiamata per eliminare un' auto dalla stazione al chilometro km
-void rottama_auto(int km, int autonomia_auto) {
-    int index = ricerca_stazione(km);
-    if (index != -1) {
-        // Trova l'elemento da eliminare nell'heap
-        int i;
-        for (i = 0; i < stazioni[index].max_heap->car_size; i++) {
-            if (stazioni[index].max_heap->cars[i] == autonomia_auto) {
+// Funzione per rimuovere un'auto dall'albero
+void rottama_auto(TreeNode* root, int km, int autonomia_auto) {
+    TreeNode* stationNode = searchStation(root, km);
+
+    if (stationNode != NULL) {
+        int index;
+        for (index = 0; index < stationNode->max_heap->car_size; index++) {
+            if (stationNode->max_heap->cars[index] == autonomia_auto) {
                 break;
             }
         }
 
-        if (i < stazioni[index].max_heap->car_size) {
-            // Rimuovi l'elemento dall'heap spostando l'ultimo elemento in posizione i e riduci la dimensione dell'heap
-            stazioni[index].max_heap->cars[i] = stazioni[index].max_heap->cars[stazioni[index].max_heap->car_size - 1];
-            stazioni[index].max_heap->car_size--;
+        if (index < stationNode->max_heap->car_size) {
+            stationNode->max_heap->cars[index] = stationNode->max_heap->cars[stationNode->max_heap->car_size - 1];
+            stationNode->max_heap->car_size--;
 
-            // Esegui heapify-down per mantenere la proprietà del max heap
-            heapifyDown(stazioni[index].max_heap, i);
+            heapifyDown(stationNode->max_heap, index);
 
             printf("rottamata\n");
         } else {
@@ -238,7 +235,6 @@ void rottama_auto(int km, int autonomia_auto) {
     }
 }
 
-
 //Ritorna il massimo di un heap
 int getMax(parco_auto * el) {
     if (el->car_size > 0) {
@@ -248,8 +244,82 @@ int getMax(parco_auto * el) {
     }
 }
 
+// Trova il nodo con la chiave successiva maggiore
+TreeNode* findNextGreaterKey(TreeNode* root, int key) {
+    TreeNode* successor = NULL;
+    while (root != NULL) {
+        if (key < root->km) {
+            successor = root;
+            root = root->left;
+        } else {
+            root = root->right;
+        }
+    }
+    return successor;
+}
 
-void reconstructPath(int predecessors[], int startNode, int endNode) {
+// Trova il nodo con la chiave successiva minore
+TreeNode* findNextSmallerKey(TreeNode* root, int key) {
+    TreeNode* successor = NULL;
+    while (root != NULL) {
+        if (key > root->km) {
+            successor = root;
+            root = root->right;
+        } else {
+            root = root->left;
+        }
+    }
+    return successor;
+}
+
+void treeToArray(TreeNode* node, TreeNode*** array, int* index) {
+    if (node != NULL) {
+        treeToArray(node->left, array, index);
+
+        // Copia l'indirizzo del puntatore al nodo nell'array
+        (*array)[*index] = node;
+        (*index)++;
+
+        treeToArray(node->right, array, index);
+    }
+}
+
+TreeNode** treeToNodeArray(TreeNode* root, int* size) {
+    if (root == NULL) {
+        *size = 0;
+        return NULL;
+    }
+
+    int index = 0;
+    TreeNode** nodeArray = (TreeNode**)malloc(*size * sizeof(TreeNode*));
+    treeToArray(root, &nodeArray, &index);
+
+    *size = index; // Aggiorna il valore di size con il numero effettivo di nodi nell'array
+    return nodeArray;
+}
+
+
+//ritorna indice del target nel nodeArray
+int binarySearchNodeArray(TreeNode** nodeArray, int size, int target) {
+    int low = 0;
+    int high = size - 1;
+
+    while (low <= high) {
+        int mid = low + (high - low) / 2;
+
+        if (nodeArray[mid]->km == target) {
+            return mid; // Il nodo è stato trovato, restituisci l'indice
+        } else if (nodeArray[mid]->km < target) {
+            low = mid + 1; // Cerca nella metà destra
+        } else {
+            high = mid - 1; // Cerca nella metà sinistra
+        }
+    }
+
+    return -1; // Il nodo non è stato trovato
+}
+
+void reconstructPath(int predecessors[], int startNode, int endNode, TreeNode** nodeArray) {
     int pathLength = 0;
     int* path = (int*)malloc(numero_stazioni * sizeof(int)); // Allocazione iniziale
 
@@ -264,75 +334,80 @@ void reconstructPath(int predecessors[], int startNode, int endNode) {
     pathLength++;
 
     for (int i = pathLength - 1; i > 0; i--) {
-        printf("%d ", stazioni[path[i]].integer);
+        printf("%d ", nodeArray[path[i]]->km);
     }
-    printf("%d\n", stazioni[path[0]].integer);
+    printf("%d\n", nodeArray[path[0]]->km);
 
     free(path);
 }
 
-
-
-//funzione chiamata per pianificare il percorso migliore
-void pianifica_percorso(int da, int a){
-
-    int costo[numero_stazioni], precedente[numero_stazioni];
-    //Inizializzo array dei costi a numero molto grande e quello dei precedenti a -1
+void pianifica_percorso(TreeNode* root, int da, int a) {
+    TreeNode** nodeArray = treeToNodeArray(root, &numero_stazioni);
+    for (int i = 0; i < numero_stazioni; i++) {
+        printf("Node %d: Key = %d\n", i, nodeArray[i]->km);
+        printf("Autonomie: ");
+        for (int j = 0; j < nodeArray[i]->max_heap->car_size; j++) {
+            printf("%d ", nodeArray[i]->max_heap->cars[j]);
+        }
+        printf("\n\n");
+    }
+    int costo[numero_stazioni];
+    int precedente[numero_stazioni];
+    // Inizializza array dei costi a numero molto grande e quello dei precedenti a NULL
     for (int i = 0; i < numero_stazioni; i++) {
         costo[i] = INT_MAX;
-        precedente [i] = -1;
+        precedente[i] = -1;
     }
 
-    int start = ricerca_stazione(da); //indice nell'array della stazione di partenza
-    int end = ricerca_stazione(a); // indice nell'array della stazione di arrivo
-    if(start == -1 || end ==-1){
-        printf("nessun percorso\n");
-    }
+    int startNode = binarySearchNodeArray(nodeArray, numero_stazioni, da); //indice in nodearray del nodo di partenza
+    int endNode = binarySearchNodeArray(nodeArray, numero_stazioni, a); //indice in nodeArray del nodo di arrivo
 
     int m;
-    costo[start] = 0;
-    //gestisco prima il caso in cui start < end
-    if(start < end) {
-        while (stazioni[start].integer != stazioni[end].integer) {
+    costo[startNode] = 0;
+    // Gestisci il caso in cui startNode->key < endNode->key
+    if (startNode < endNode) {
+        while (nodeArray[startNode]->km < nodeArray[endNode]->km) {
             m = 1;
-            while (start + m < numero_stazioni &&
-                   stazioni[start].integer + getMax(stazioni[start].max_heap) >= stazioni[start + m].integer) {
-                if (costo[start] < costo[start + m] && costo[start + m] > costo[start]+1) {
-                    costo[start + m] = costo[start]+1;
-                    precedente[start + m] = start;
+            while (startNode + m < numero_stazioni &&
+                    nodeArray[startNode]->km + getMax(nodeArray[startNode]->max_heap) >= nodeArray[startNode +m ]->km) {
+                if (costo[startNode] < costo[startNode + m] && costo[startNode + m] > costo[startNode] + 1) {
+                    costo[startNode + m] = costo[startNode] + 1;
+                    precedente[startNode + m] = startNode;
                 }
                 m++;
             }
-
-            start++;
+            startNode++;
         }
-        if(precedente[end] == -1){
+        if (precedente[endNode] == -1) {
             printf("nessun percorso\n");
-        }else{
-            reconstructPath(precedente, ricerca_stazione(da), end);
+       } else {
+            reconstructPath(precedente, binarySearchNodeArray(nodeArray, numero_stazioni, da), endNode, nodeArray);
+           printf("Ricostruisco il percorso\n");
         }
 
-    }else { // Gestisco il caso in cui start > end
-        while (start > end) {
+    } else { // Gestisci il caso in cui startNode->key > endNode->key
+        while (startNode > endNode) {
             m = 1;
-            while (start - m >= end && stazioni[start].integer - getMax(stazioni[start].max_heap) <= stazioni[start - m].integer) {
-                if (costo[start] < costo[start - m]) {
-                    costo[start - m] = costo[start] + 1;
-                    precedente[start - m] = start;
+            while (startNode - m >= endNode &&
+                   nodeArray[startNode]->km - getMax(nodeArray[startNode]->max_heap) <= nodeArray[startNode - m]->km) {
+                if (costo[startNode] < costo[startNode - m]) {
+                    costo[startNode - m] = costo[startNode] + 1;
+                    precedente[startNode - m] = startNode;
                 }
                 m++;
             }
-            start--;
+            startNode--;
         }
-        if(precedente[end] == -1){
+        if (precedente[endNode] == -1) {
             printf("nessun percorso\n");
-        }else{
-            reconstructPath(precedente, ricerca_stazione(da), end);
+        } else {
+            //reconstructPath(precedente, binarySearchNodeArray(nodeArray, numero_stazioni, da), endNode, nodeArray);
+            printf("Ricostruisco il percorso\n");
 
         }
     }
+}
 
-}*/
 
 // Funzione per la stampa in ordine crescente dell'albero
 void printTreeInOrder(TreeNode* node) {
@@ -368,31 +443,26 @@ int main() {
                 }
             }
             aggiungi_stazione(km, autonomia, na);
-            printTreeInOrder(stazioni);
         } else if (strcmp(comando, DELETE_STATION) == 0) {
             if(scanf("%d", &km)!=1){
                 break;
             }
             demolisci_stazione(km);
-            printTreeInOrder(stazioni);
         } else if (strcmp(comando, ADD_CAR) == 0) {
             if(scanf("%d %d", &km, &autonomia_auto)!=2){
                 break;
             }
-            printf("Aggiungo un auto\n");
-            //aggiungi_auto(km, autonomia_auto);
+            aggiungi_auto(stazioni,km, autonomia_auto);
         } else if (strcmp(comando, DELETE_CAR) == 0) {
             if(scanf("%d %d", &km, &autonomia_auto)!=2){
                 break;
             }
-            printf("Rottamo auto\n");
-            //rottama_auto(km, autonomia_auto);
+            rottama_auto(stazioni, km, autonomia_auto);
         } else if (strcmp(comando, PERCORSO) == 0) {
             if(scanf("%d %d", &da, &a)!=2){
                 break;
             }
-            //pianifica_percorso(da, a);
-            printf("Pianifico percorso\n");
+            pianifica_percorso(stazioni, da, a);
         }
     } while (k > 0);
     return 0;
