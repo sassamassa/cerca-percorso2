@@ -244,59 +244,41 @@ int getMax(parco_auto * el) {
     }
 }
 
-// Trova il nodo con la chiave successiva maggiore
-TreeNode* findNextGreaterKey(TreeNode* root, int key) {
-    TreeNode* successor = NULL;
-    while (root != NULL) {
-        if (key < root->km) {
-            successor = root;
-            root = root->left;
-        } else {
-            root = root->right;
-        }
-    }
-    return successor;
-}
 
-// Trova il nodo con la chiave successiva minore
-TreeNode* findNextSmallerKey(TreeNode* root, int key) {
-    TreeNode* successor = NULL;
-    while (root != NULL) {
-        if (key > root->km) {
-            successor = root;
-            root = root->right;
-        } else {
-            root = root->left;
-        }
-    }
-    return successor;
-}
-
-void treeToArray(TreeNode* node, TreeNode*** array, int* index) {
-    if (node != NULL) {
-        treeToArray(node->left, array, index);
-
-        // Copia l'indirizzo del puntatore al nodo nell'array
-        (*array)[*index] = node;
-        (*index)++;
-
-        treeToArray(node->right, array, index);
-    }
-}
-
-TreeNode** treeToNodeArray(TreeNode* root, int* size) {
+void inorderTraversal(TreeNode* root, TreeNode** array, int* index) {
     if (root == NULL) {
-        *size = 0;
-        return NULL;
+        return;
     }
 
-    int index = 0;
-    TreeNode** nodeArray = (TreeNode**)malloc(*size * sizeof(TreeNode*));
-    treeToArray(root, &nodeArray, &index);
-
-    *size = index; // Aggiorna il valore di size con il numero effettivo di nodi nell'array
-    return nodeArray;
+    inorderTraversal(root->left, array, index);
+    array[*index] = root;
+    (*index)++;
+    inorderTraversal(root->right, array, index);
 }
+
+TreeNode** treeToArray(TreeNode* root, int* size) {
+    int index = 0;
+    // Count the number of nodes in the tree
+    void countNodes(TreeNode* node) {
+        if (node == NULL) {
+            return;
+        }
+        (*size)++;
+        countNodes(node->left);
+        countNodes(node->right);
+    }
+    countNodes(root);
+
+    // Create an array to store the nodes
+    TreeNode** array = (TreeNode**)malloc(*size * sizeof(TreeNode*));
+    index = 0;
+
+    // Traverse the tree and populate the array
+    inorderTraversal(root, array, &index);
+
+    return array;
+}
+
 
 
 //ritorna indice del target nel nodeArray
@@ -319,18 +301,20 @@ int binarySearchNodeArray(TreeNode** nodeArray, int size, int target) {
     return -1; // Il nodo non è stato trovato
 }
 
-void reconstructPath(int predecessors[], int startNode, int endNode, TreeNode** nodeArray) {
-    int currentNode = endNode;
-    while (currentNode != startNode && currentNode >= 0 && currentNode < numero_stazioni) {
-        printf("%d ", nodeArray[currentNode]->km);
-        currentNode = predecessors[currentNode];
+void reconstructPath(int predecessors[], int startNode, int currentNode, TreeNode** nodeArray) {
+    if (currentNode == startNode) {
+        printf("%d", nodeArray[currentNode]->km);
+        return;
     }
-    printf("%d\n", nodeArray[startNode]->km);
+
+    reconstructPath(predecessors, startNode, predecessors[currentNode], nodeArray);
+    printf(" %d", nodeArray[currentNode]->km);
 }
 
 
+
 void pianifica_percorso(TreeNode* root, int da, int a) {
-    TreeNode** nodeArray = treeToNodeArray(root, &numero_stazioni);
+    TreeNode** nodeArray = treeToArray(root, &numero_stazioni);
     int costo[numero_stazioni];
     int precedente[numero_stazioni];
     // Inizializza array dei costi a numero molto grande e quello dei precedenti a NULL
@@ -341,15 +325,15 @@ void pianifica_percorso(TreeNode* root, int da, int a) {
 
     int startNode = binarySearchNodeArray(nodeArray, numero_stazioni, da); //indice in nodearray del nodo di partenza
     int endNode = binarySearchNodeArray(nodeArray, numero_stazioni, a); //indice in nodeArray del nodo di arrivo
-    printf("SONO QUI\n");
     int m;
     costo[startNode] = 0;
     // Gestisci il caso in cui startNode->key < endNode->key
     if (startNode < endNode) {
+
         while (nodeArray[startNode]->km < nodeArray[endNode]->km) {
             m = 1;
             while (startNode + m < numero_stazioni &&
-                    nodeArray[startNode]->km + getMax(nodeArray[startNode]->max_heap) >= nodeArray[startNode +m ]->km) {
+                   nodeArray[startNode]->km + getMax(nodeArray[startNode]->max_heap) >= nodeArray[startNode +m ]->km) {
                 if (costo[startNode] < costo[startNode + m] && costo[startNode + m] > costo[startNode] + 1) {
                     costo[startNode + m] = costo[startNode] + 1;
                     precedente[startNode + m] = startNode;
@@ -360,9 +344,10 @@ void pianifica_percorso(TreeNode* root, int da, int a) {
         }
         if (precedente[endNode] == -1) {
             printf("nessun percorso\n");
-       } else {
+        } else {
             reconstructPath(precedente, binarySearchNodeArray(nodeArray, numero_stazioni, da), endNode, nodeArray);
-           printf("Ricostruisco il percorso\n");
+            printf("\n");
+
         }
 
     } else { // Gestisci il caso in cui startNode->key > endNode->key
@@ -381,9 +366,8 @@ void pianifica_percorso(TreeNode* root, int da, int a) {
         if (precedente[endNode] == -1) {
             printf("nessun percorso\n");
         } else {
-            //reconstructPath(precedente, binarySearchNodeArray(nodeArray, numero_stazioni, da), endNode, nodeArray);
-            printf("Ricostruisco il percorso\n");
-
+            reconstructPath(precedente, binarySearchNodeArray(nodeArray, numero_stazioni, da), endNode, nodeArray);
+            printf("\n" );
         }
     }
 }
