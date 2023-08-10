@@ -256,18 +256,22 @@ void inorderTraversal(TreeNode* root, TreeNode** array, int* index) {
     inorderTraversal(root->right, array, index);
 }
 
+void countNodes(TreeNode* node, int* size) {
+    if (node == NULL) {
+        return;
+    }
+    (*size)++;
+    countNodes(node->left, size);
+    countNodes(node->right, size);
+}
+
 TreeNode** treeToArray(TreeNode* root, int* size) {
     int index = 0;
-    // Count the number of nodes in the tree
-    void countNodes(TreeNode* node) {
-        if (node == NULL) {
-            return;
-        }
-        (*size)++;
-        countNodes(node->left);
-        countNodes(node->right);
-    }
-    countNodes(root);
+    *size = 0;
+
+    // Count the nodes in the tree
+    countNodes(root, size);
+
 
     // Create an array to store the nodes
     TreeNode** array = (TreeNode**)malloc(*size * sizeof(TreeNode*));
