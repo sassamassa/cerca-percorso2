@@ -144,20 +144,25 @@ void aggiungi_stazione(int km, int *automobili, int na) {
     }
 }
 
-// Funzione per trovare il nodo con il valore minimo nell'albero
+void freeTreeNode(TreeNode* node) {
+    if (node == NULL)
+        return;
+
+    free(node->max_heap->cars);
+    free(node->max_heap);
+    free(node);
+}
+
 TreeNode* minValueNode(TreeNode* node) {
     TreeNode* current = node;
-    while (current && current->left != NULL) {
+    while (current && current->left != NULL)
         current = current->left;
-    }
     return current;
 }
 
-// Funzione per eliminare un nodo dall'albero
 TreeNode* deleteNode(TreeNode* root, int km) {
-    if (root == NULL) {
-        return root;
-    }
+    if (root == NULL)
+        return NULL;
 
     if (km < root->km) {
         root->left = deleteNode(root->left, km);
@@ -166,22 +171,32 @@ TreeNode* deleteNode(TreeNode* root, int km) {
     } else {
         if (root->left == NULL) {
             TreeNode* temp = root->right;
-            freeHeap(root->max_heap);
-            free(root);
+            freeTreeNode(root);
             return temp;
         } else if (root->right == NULL) {
             TreeNode* temp = root->left;
-            freeHeap(root->max_heap);
-            free(root);
+            freeTreeNode(root);
             return temp;
         }
 
-        TreeNode* temp = minValueNode(root->right);
-        root->km = temp->km;
-        root->right = deleteNode(root->right, temp->km);
+        TreeNode* minValueNode = root->right;
+        while (minValueNode->left != NULL) {
+            minValueNode = minValueNode->left;
+        }
+
+        root->km = minValueNode->km;
+
+        // Trasferire il max_heap invece di sovrascriverlo
+        parco_auto* temp_max_heap = root->max_heap;
+        root->max_heap = minValueNode->max_heap;
+        minValueNode->max_heap = temp_max_heap;
+
+        root->right = deleteNode(root->right, minValueNode->km);
     }
     return root;
 }
+
+
 
 
 // Funzione per demolire una stazione dall'albero
@@ -282,8 +297,6 @@ TreeNode** treeToArray(TreeNode* root, int* size) {
 
     return array;
 }
-
-
 
 //ritorna indice del target nel nodeArray
 int binarySearchNodeArray(TreeNode** nodeArray, int size, int target) {
@@ -432,6 +445,7 @@ int main() {
             }
             pianifica_percorso(stazioni, da, a);
         }
+
     } while (k > 0);
     return 0;
 }
