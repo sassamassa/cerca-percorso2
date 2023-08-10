@@ -12,7 +12,7 @@ char PERCORSO[19]="pianifica-percorso";
 
 int numero_stazioni = 0;
 
-//Definisco elemento dell'heap
+//Definisco elemento dell heap
 typedef struct {
     int *cars;
     int car_size;
@@ -38,11 +38,6 @@ parco_auto * createHeap() {
     return el;
 }
 
-// Funzione per liberare la memoria del max heap
-void freeHeap(parco_auto * el) {
-    free(el->cars);
-    free(el);
-}
 
 // Funzione per raddoppiare la grandezza del max heap
 void resizeHeap(parco_auto * el) {
@@ -84,7 +79,7 @@ void insertHeap(parco_auto * el, int value) {
     int currentIndex = el->car_size;
     el->car_size++;
 
-    // Sistemiamo l'elemento nell'heap risalendo finché non rispetta la condizione del max heap
+    // Sistemiamo l'elemento nell heap risalendo finché non rispetta la condizione del max heap
     while (currentIndex > 0 && el->cars[currentIndex] > el->cars[(currentIndex - 1) / 2]) {
         int parentIndex = (currentIndex - 1) / 2;
         int temp = el->cars[currentIndex];
@@ -151,13 +146,6 @@ void freeTreeNode(TreeNode* node) {
     free(node->max_heap->cars);
     free(node->max_heap);
     free(node);
-}
-
-TreeNode* minValueNode(TreeNode* node) {
-    TreeNode* current = node;
-    while (current && current->left != NULL)
-        current = current->left;
-    return current;
 }
 
 TreeNode* deleteNode(TreeNode* root, int km) {
@@ -236,7 +224,7 @@ void rottama_auto(TreeNode* root, int km, int autonomia_auto) {
         }
 
         if (index < stationNode->max_heap->car_size) {
-            stationNode->max_heap->cars[index] = stationNode->max_heap->cars[stationNode->max_heap->car_size - 1];
+            stationNode->max_heap->cars[index] = stationNode->max_heap->cars[stationNode->max_heap->car_size - 1]; //scambio ultimo elemento e quello da eliminare
             stationNode->max_heap->car_size--;
 
             heapifyDown(stationNode->max_heap, index);
@@ -253,7 +241,7 @@ void rottama_auto(TreeNode* root, int km, int autonomia_auto) {
 //Ritorna il massimo di un heap
 int getMax(parco_auto * el) {
     if (el->car_size > 0) {
-        return el->cars[0]; // Il massimo elemento si trova sempre nella radice dell'heap
+        return el->cars[0]; // Il massimo elemento si trova sempre nella radice dell heap
     } else {
         return INT_MIN;
     }
@@ -340,7 +328,7 @@ void pianifica_percorso(TreeNode* root, int da, int a) {
         precedente[i] = -1;
     }
 
-    int startNode = binarySearchNodeArray(nodeArray, numero_stazioni, da); //indice in nodearray del nodo di partenza
+    int startNode = binarySearchNodeArray(nodeArray, numero_stazioni, da); //indice in nodeArray del nodo di partenza
     int endNode = binarySearchNodeArray(nodeArray, numero_stazioni, a); //indice in nodeArray del nodo di arrivo
     int m;
     costo[startNode] = 0;
@@ -386,21 +374,6 @@ void pianifica_percorso(TreeNode* root, int da, int a) {
             reconstructPath(precedente, binarySearchNodeArray(nodeArray, numero_stazioni, da), endNode, nodeArray);
             printf("\n" );
         }
-    }
-}
-
-
-// Funzione per la stampa in ordine crescente dell'albero
-void printTreeInOrder(TreeNode* node) {
-    if (node != NULL) {
-        printTreeInOrder(node->left);
-        printf("Stazione: %d\n", node->km);
-        printf("Autonomie: ");
-        for (int i = 0; i < node->max_heap->car_size; i++) {
-            printf("%d ", node->max_heap->cars[i]);
-        }
-        printf("\n\n");
-        printTreeInOrder(node->right);
     }
 }
 
