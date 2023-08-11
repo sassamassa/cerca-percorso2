@@ -243,7 +243,7 @@ int getMax(parco_auto * el) {
     if (el->car_size > 0) {
         return el->cars[0]; // Il massimo elemento si trova sempre nella radice dell heap
     } else {
-        return INT_MIN;
+        return 0;
     }
 }
 
